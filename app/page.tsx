@@ -1,16 +1,35 @@
-import { Button } from "styles/components/ui/button";
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <h1 className="text-5xl font-bold text-zinc-900 dark:text-white sm:text-6xl">
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-          <Button variant="default" size="lg" className="mt-8 block mx-auto">
-          Get Started
-          </Button>
-        </h1>
-      </main>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-2xl">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-4xl font-bold">Task Manager</CardTitle>
+          <CardDescription className="text-lg">
+            Organize your tasks efficiently and boost your productivity
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center space-y-4">
+          <p className="text-center text-muted-foreground mb-4">
+            Get started by signing in to your account or creating a new one
+          </p>
+          <div className="flex gap-4 w-full max-w-sm">
+            <Link href="/login" className="flex-1">
+              <Button variant="default" size="lg" className="w-full">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup" className="flex-1">
+              <Button variant="outline" size="lg" className="w-full">
+                Sign Up
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }
