@@ -97,7 +97,7 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Task</DialogTitle>
+          <DialogTitle className="text-xl text-primary">Edit Task</DialogTitle>
           <DialogDescription>
             Make changes to your task
           </DialogDescription>
@@ -181,12 +181,13 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
             <Button
               type="button"
               variant="outline"
+              className="cursor-pointer"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="cursor-pointer">
               {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>

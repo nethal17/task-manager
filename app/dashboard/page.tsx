@@ -80,7 +80,7 @@ export default function DashboardPage() {
     }
     
     toast.success("Signed out successfully")
-    router.push("/login")
+    router.push("/")
     router.refresh()
   }
 
@@ -146,7 +146,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-primary">Dashboard</h1>
+            <h1 className="text-4xl font-bold text-primary">My Tasks</h1>
             <p className="text-muted-foreground">Welcome back, {user?.user_metadata?.full_name || user?.email}</p>
           </div>
           <div className="flex gap-2">
