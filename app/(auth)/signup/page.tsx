@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 import type { SignupFormData } from "@/lib/types/auth"
 
@@ -28,24 +29,32 @@ export default function SignupPage() {
   const password = watch("password")
 
   const onSubmit = async (data: SignupFormData) => {
-    setIsLoading(true)
-
     try {
+      setIsLoading(true)
+
+      // Validate form data
+      if (!data.email || !data.password || !data.confirmPassword) {
+        throw new ValidationError("All fields are required")
+      }
+
+      if (data.password !== data.confirmPassword) {
+        throw new ValidationError("Passwords do not match")
+      }
+
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password
       })
 
       if (error) {
-        toast.error(error.message)
-        return
+        const appError = handleSupabaseError(error)
+        throw appError
       }
 
       toast.success("Account created! Please check your email to verify your account.")
       router.push("/login")
     } catch (error) {
-      toast.error("An unexpected error occurred")
-      console.error(error)
+      handleError(error, "Failed to create account")
     } finally {
       setIsLoading(false)
     }

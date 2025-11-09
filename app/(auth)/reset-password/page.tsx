@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
+import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 type ResetPasswordForm = {
   password: string
   confirmPassword: string
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -40,23 +41,35 @@ export default function ResetPasswordPage() {
   }, [searchParams, router])
 
   const onSubmit = async (data: ResetPasswordForm) => {
-    setIsLoading(true)
-
     try {
+      setIsLoading(true)
+
+      // Validate passwords
+      if (!data.password || !data.confirmPassword) {
+        throw new ValidationError("All fields are required")
+      }
+
+      if (data.password !== data.confirmPassword) {
+        throw new ValidationError("Passwords do not match")
+      }
+
+      if (data.password.length < 6) {
+        throw new ValidationError("Password must be at least 6 characters")
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: data.password,
       })
 
       if (error) {
-        toast.error(error.message)
-        return
+        const appError = handleSupabaseError(error)
+        throw appError
       }
 
       toast.success("Password reset successfully!")
       router.push("/login")
     } catch (error) {
-      toast.error("An error occurred. Please try again.")
-      console.error(error)
+      handleError(error, "Failed to reset password")
     } finally {
       setIsLoading(false)
     }
@@ -127,5 +140,22 @@ export default function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">Reset Password</CardTitle>
+            <CardDescription>Loading...</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }

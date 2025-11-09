@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import type { User } from "@supabase/supabase-js"
 import type { Task } from "@/lib/types/task"
 import { LogOutIcon } from "lucide-react"
+import { handleError, handleSupabaseError, withRetry } from "@/lib/exceptions"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -36,68 +37,81 @@ export default function DashboardPage() {
   const supabase = createClient()
 
   const fetchTasks = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
+      const tasks = await withRetry(async () => {
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
 
-    if (error) {
-      toast.error("Failed to load tasks")
-      console.error(error)
-      return
+        if (error) throw handleSupabaseError(error)
+        return data || []
+      })
+
+      setTasks(tasks)
+    } catch (error) {
+      handleError(error, 'Fetch Tasks')
     }
-
-    setTasks(data || [])
   }
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push("/login")
-        return
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (error) throw handleSupabaseError(error)
+        
+        if (!user) {
+          router.push("/login")
+          return
+        }
+        
+        setUser(user)
+        setIsLoading(false)
+        fetchTasks()
+      } catch (error) {
+        handleError(error, 'Get User', {
+          redirectOnAuth: true
+        })
+        setIsLoading(false)
       }
-      
-      setUser(user)
-      setIsLoading(false)
-      fetchTasks()
     }
 
     getUser()
   }, [router, supabase.auth])
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    
-    if (error) {
-      toast.error(error.message)
-      return
+    try {
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) throw handleSupabaseError(error)
+      
+      toast.success("Signed out successfully")
+      router.push("/")
+      router.refresh()
+    } catch (error) {
+      handleError(error, 'Sign Out')
     }
-    
-    toast.success("Signed out successfully")
-    router.push("/")
-    router.refresh()
   }
 
   const toggleTaskComplete = async (taskId: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from("tasks")
-      .update({ completed: !currentStatus, updated_at: new Date().toISOString() })
-      .eq("id", taskId)
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ completed: !currentStatus, updated_at: new Date().toISOString() })
+        .eq("id", taskId)
 
-    if (error) {
-      toast.error("Failed to update task")
-      console.error(error)
-      return
+      if (error) throw handleSupabaseError(error)
+
+      toast.success(currentStatus ? "Task marked as incomplete" : "Task completed!")
+      fetchTasks()
+    } catch (error) {
+      handleError(error, 'Toggle Task Complete')
     }
-
-    toast.success(currentStatus ? "Task marked as incomplete" : "Task completed!")
-    fetchTasks()
   }
 
   const handleEditTask = (task: Task) => {
@@ -113,21 +127,21 @@ export default function DashboardPage() {
   const confirmDeleteTask = async () => {
     if (!deletingTask) return
 
-    const { error } = await supabase
-      .from("tasks")
-      .delete()
-      .eq("id", deletingTask.id)
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("id", deletingTask.id)
 
-    if (error) {
-      toast.error("Failed to delete task")
-      console.error(error)
-      return
+      if (error) throw handleSupabaseError(error)
+
+      toast.success("Task deleted successfully")
+      setIsDeleteDialogOpen(false)
+      setDeletingTask(null)
+      fetchTasks()
+    } catch (error) {
+      handleError(error, 'Delete Task')
     }
-
-    toast.success("Task deleted successfully")
-    setIsDeleteDialogOpen(false)
-    setDeletingTask(null)
-    fetchTasks()
   }
 
   if (isLoading) {

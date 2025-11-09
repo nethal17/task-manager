@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 import type { LoginFormData } from "@/lib/types/auth" 
 
@@ -25,25 +26,29 @@ export default function LoginPage() {
   } = useForm<LoginFormData>()
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
-
     try {
+      setIsLoading(true)
+
+      // Validate form data
+      if (!data.email || !data.password) {
+        throw new ValidationError("Email and password are required")
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
       if (error) {
-        toast.error(error.message)
-        return
+        const appError = handleSupabaseError(error)
+        throw appError
       }
 
       toast.success("Logged in successfully!")
       router.push("/dashboard")
       router.refresh()
     } catch (error) {
-      toast.error("An unexpected error occurred")
-      console.error(error)
+      handleError(error, "Failed to sign in")
     } finally {
       setIsLoading(false)
     }

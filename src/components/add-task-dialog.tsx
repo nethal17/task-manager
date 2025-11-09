@@ -28,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Plus } from "lucide-react"
 import { format } from "date-fns"
 import type { TaskInsert, PriorityType } from "@/lib/types/task"
+import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 interface AddTaskDialogProps {
   userId: string
@@ -52,8 +53,17 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
     setIsLoading(true)
 
     try {
+      // Validate
+      if (!data.title || data.title.trim().length === 0) {
+        throw new ValidationError('Task title is required')
+      }
+
+      if (data.title.length > 255) {
+        throw new ValidationError('Task title is too long (max 255 characters)')
+      }
+
       const newTask = {
-        title: data.title,
+        title: data.title.trim(),
         priority,
         deadline_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
         completed: false,
@@ -64,10 +74,7 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
         .from("tasks")
         .insert([newTask])
 
-      if (error) {
-        toast.error(error.message)
-        return
-      }
+      if (error) throw handleSupabaseError(error)
 
       toast.success("Task added successfully!")
       setOpen(false)
@@ -76,8 +83,7 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
       setPriority("Low")
       onTaskAdded()
     } catch (error) {
-      toast.error("An unexpected error occurred")
-      console.error(error)
+      handleError(error, 'Create Task')
     } finally {
       setIsLoading(false)
     }

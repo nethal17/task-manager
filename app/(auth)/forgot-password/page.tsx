@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 import type { ForgotPasswordFormData } from "@/lib/types/auth"
 
@@ -24,23 +25,27 @@ export default function ForgotPasswordPage() {
   } = useForm<ForgotPasswordFormData>()
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true)
-
     try {
+      setIsLoading(true)
+
+      // Validate email
+      if (!data.email) {
+        throw new ValidationError("Email is required")
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) {
-        toast.error(error.message)
-        return
+        const appError = handleSupabaseError(error)
+        throw appError
       }
 
       setIsSubmitted(true)
       toast.success("Password reset email sent! Check your inbox.")
     } catch (error) {
-      toast.error("An unexpected error occurred")
-      console.error(error)
+      handleError(error, "Failed to send password reset email")
     } finally {
       setIsLoading(false)
     }

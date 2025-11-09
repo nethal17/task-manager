@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import type { Task, PriorityType } from "@/lib/types/task"
+import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 interface EditTaskDialogProps {
   task: Task
@@ -65,8 +66,17 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
     setIsLoading(true)
 
     try {
+      // Validate
+      if (!data.title || data.title.trim().length === 0) {
+        throw new ValidationError('Task title is required')
+      }
+
+      if (data.title.length > 255) {
+        throw new ValidationError('Task title is too long (max 255 characters)')
+      }
+
       const updatedTask = {
-        title: data.title,
+        title: data.title.trim(),
         priority,
         deadline_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
         updated_at: new Date().toISOString(),
@@ -77,17 +87,13 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
         .update(updatedTask)
         .eq("id", task.id)
 
-      if (error) {
-        toast.error(error.message)
-        return
-      }
+      if (error) throw handleSupabaseError(error)
 
       toast.success("Task updated successfully!")
       onOpenChange(false)
       onTaskUpdated()
     } catch (error) {
-      toast.error("An unexpected error occurred")
-      console.error(error)
+      handleError(error, 'Update Task')
     } finally {
       setIsLoading(false)
     }
