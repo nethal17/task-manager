@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-import type { ForgotPasswordFormData } from "@/lib/types"
+import type { ForgotPasswordFormData } from "@/lib/types/auth"
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full mt-4 cursor-pointer" disabled={isLoading}>
+            <Button type="submit" className="w-full mt-6 cursor-pointer" disabled={isLoading}>
               {isLoading ? "Sending..." : "Send reset link"}
             </Button>
             <Link href="/login" className="w-full">

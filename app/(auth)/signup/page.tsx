@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-import type { SignupFormData } from "@/lib/types"
+import type { SignupFormData } from "@/lib/types/auth"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -55,7 +55,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+          <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
           <CardDescription>
             Enter your information to get started
           </CardDescription>
@@ -127,7 +127,7 @@ export default function SignupPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full mt-4 cursor-pointer" disabled={isLoading}>
+            <Button type="submit" className="w-full mt-6 cursor-pointer" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Create account"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">

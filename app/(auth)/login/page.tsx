@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-import type { LoginFormData } from "@/lib/types" 
+import type { LoginFormData } from "@/lib/types/auth" 
 
 export default function LoginPage() {
   const router = useRouter()
@@ -53,9 +53,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+          <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
           <CardDescription>
-            Enter your credentials to access your account
+            Enter your credentials to access your tasks
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -115,7 +115,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full mt-4 cursor-pointer" disabled={isLoading}>
+            <Button type="submit" className="w-full mt-6 cursor-pointer" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
