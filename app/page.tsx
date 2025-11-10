@@ -40,9 +40,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-linear-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 py-16">
-        <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
+        <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto overflow-visible">
           <div className="space-y-4">
-            <h1 className="text-5xl md:text-6xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-6xl font-bold bg-linear-to-r from-primary to-primary/80 bg-clip-text text-transparent leading-[1.08] md:leading-[1.08] pb-1">
               My Task Manager
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl">
