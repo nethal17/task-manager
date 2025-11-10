@@ -39,51 +39,46 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-background to-muted/20">
-      {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
-          {/* Header */}
           <div className="space-y-4">
             <h1 className="text-5xl md:text-6xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Task Manager
+              My Task Manager
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl">
               Organize your life, boost productivity, and achieve your goals with our powerful task management system
             </p>
           </div>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
             <Link href="/signup" className="flex-1">
-              <Button size="lg" className="w-full text-lg h-12">
+              <Button size="lg" className="w-full text-lg h-12 cursor-pointer">
                 Get Started Free
               </Button>
             </Link>
             <Link href="/login" className="flex-1">
-              <Button variant="outline" size="lg" className="w-full text-lg h-12">
+              <Button variant="outline" size="lg" className="w-full text-lg h-12 cursor-pointer">
                 Sign In
               </Button>
             </Link>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 pt-8 w-full max-w-2xl">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-8 w-full max-w-2xl">
             <div className="space-y-2">
-              <p className="text-3xl font-bold text-primary">100%</p>
-              <p className="text-sm text-muted-foreground">Free to Use</p>
+              <p className="text-2xl sm:text-3xl font-bold text-primary">100%</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Free to Use</p>
             </div>
             <div className="space-y-2">
-              <p className="text-3xl font-bold text-primary">Secure</p>
-              <p className="text-sm text-muted-foreground">Data Protected</p>
+              <p className="text-2xl sm:text-3xl font-bold text-primary">Secure</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Data Protected</p>
             </div>
             <div className="space-y-2">
-              <p className="text-3xl font-bold text-primary">24/7</p>
-              <p className="text-sm text-muted-foreground">Always Available</p>
+              <p className="text-2xl sm:text-3xl font-bold text-primary">24/7</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Always Available</p>
             </div>
           </div>
         </div>
 
-        {/* Features Section */}
         <div className="mt-24 max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -158,7 +153,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Final CTA */}
         <div className="mt-24 text-center">
           <Card className="max-w-3xl mx-auto bg-primary/5 border-primary/20">
             <CardContent className="pt-12 pb-12 space-y-6">
@@ -169,7 +163,7 @@ export default function Home() {
                 Join thousands of users who are already managing their tasks efficiently
               </p>
               <Link href="/signup">
-                <Button size="lg" className="text-lg h-12 px-8">
+                <Button size="lg" className="text-lg h-12 px-8 cursor-pointer">
                   Start Managing Tasks Now
                 </Button>
               </Link>
@@ -177,7 +171,7 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Footer */}
+
         <div className="mt-16 text-center text-sm text-muted-foreground">
           <p>© 2025 Task Manager. All rights reserved.</p>
         </div>

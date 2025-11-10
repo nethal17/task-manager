@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
+import toast from "react-hot-toast"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -101,7 +101,7 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-primary">Edit Task</DialogTitle>
           <DialogDescription>
@@ -161,7 +161,7 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
                     {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="center" side="bottom">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -174,7 +174,7 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
                 <Button
                   type="button"
                   size="sm"
-                  className="bg-background text-destructive hover:bg-background/80 hover:underline cursor-pointer"
+                  className="bg-background text-destructive hover:bg-background/80 hover:underline cursor-pointer w-full sm:w-auto"
                   onClick={() => setSelectedDate(undefined)}
                   disabled={isLoading}
                 >
@@ -183,17 +183,17 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
               )}
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
-              className="cursor-pointer"
+              className="cursor-pointer w-full sm:w-auto"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="cursor-pointer">
+            <Button type="submit" disabled={isLoading} className="cursor-pointer w-full sm:w-auto">
               {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>

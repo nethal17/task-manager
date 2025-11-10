@@ -19,7 +19,7 @@ import {
 import { AddTaskDialog } from "@/components/add-task-dialog"
 import { EditTaskDialog } from "@/components/edit-task-dialog"
 import { Pencil, Trash2 } from "lucide-react"
-import { toast } from "sonner"
+import toast from "react-hot-toast"
 import type { User } from "@supabase/supabase-js"
 import type { Task } from "@/lib/types/task"
 import { LogOutIcon } from "lucide-react"
@@ -156,18 +156,17 @@ export default function DashboardPage() {
   const activeTasks = tasks.filter(task => !task.completed)
 
   return (
-    <div className="min-h-screen bg-background p-12">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-background p-4 sm:p-6 md:p-12">
+      <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-primary">My Tasks</h1>
-            <p className="text-muted-foreground">Welcome back, {user?.user_metadata?.full_name || user?.email}</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">My Tasks</h1>
+            <p className="text-sm sm:text-base text-muted-foreground truncate">Welcome back, {user?.user_metadata?.full_name || user?.email}</p>
           </div>
-          <div className="flex gap-2">
-            {user && <AddTaskDialog userId={user.id} onTaskAdded={fetchTasks} />}
-            <Button variant="destructive" onClick={handleSignOut} className="p-6 cursor-pointer">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+            <Button variant="destructive" onClick={handleSignOut} className="p-6 sm:p-6 cursor-pointer whitespace-nowrap">
               <LogOutIcon className="h-4 w-4" />
-              Sign out
+              <span className="sm:inline">Sign out</span>
             </Button>
           </div>
         </div>
@@ -206,24 +205,27 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle className="text-2xl">Active Tasks</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl">Active Tasks</CardTitle>
                 <CardDescription>Tasks in progress</CardDescription>
               </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-red-200 dark:bg-red-900/50 border border-red-300 dark:border-red-800"></div>
+              <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-red-200 dark:bg-red-900/50 border border-red-300 dark:border-red-800"></div>
                   <span className="text-muted-foreground">High</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-yellow-200 dark:bg-yellow-900/50 border border-yellow-300 dark:border-yellow-800"></div>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-yellow-200 dark:bg-yellow-900/50 border border-yellow-300 dark:border-yellow-800"></div>
                   <span className="text-muted-foreground">Medium</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-blue-200 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-800"></div>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-blue-200 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-800"></div>
                   <span className="text-muted-foreground">Low</span>
                 </div>
+              </div>
+              <div>
+                {user && <AddTaskDialog userId={user.id} onTaskAdded={fetchTasks} />}
               </div>
             </div>
           </CardHeader>
@@ -237,7 +239,7 @@ export default function DashboardPage() {
                 {activeTasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg transition-colors gap-3 ${
                       task.priority === "High" 
                         ? "bg-red-50 border-red-300 hover:bg-red-100/70 dark:bg-red-950/20 dark:border-red-900/50 dark:hover:bg-red-950/30" 
                         : task.priority === "Medium" 
@@ -245,14 +247,14 @@ export default function DashboardPage() {
                         : "bg-blue-50 border-blue-300 hover:bg-blue-100/70 dark:bg-blue-950/20 dark:border-blue-900/50 dark:hover:bg-blue-950/30"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Checkbox
                         checked={task.completed}
                         onCheckedChange={() => toggleTaskComplete(task.id, task.completed)}
                         aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
                       />
-                      <div>
-                        <p className="font-medium">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">
                           {task.title}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -260,24 +262,24 @@ export default function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 sm:ml-3">
                       <Button
                         variant="ghost"
                         size="icon-lg"
-                        className="cursor-pointer"
+                        className="cursor-pointer shrink-0"
                         onClick={() => handleEditTask(task)}
                         aria-label={`Edit ${task.title}`}
                       >
-                        <Pencil className="h-5 w-5" />
+                        <Pencil className="h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon-lg"
                         onClick={() => handleDeleteTask(task.id, task.title)}
                         aria-label={`Delete ${task.title}`}
-                        className="text-destructive hover:text-destructive cursor-pointer"
+                        className="text-destructive hover:text-destructive cursor-pointer shrink-0"
                       >
-                        <Trash2 className="h-5 w-5" />
+                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                     </div>
                   </div>
@@ -290,7 +292,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle className="text-2xl">Completed Tasks</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl">Completed Tasks</CardTitle>
               <CardDescription>Tasks you&apos;ve finished</CardDescription>
             </div>  
           </CardHeader>
@@ -304,16 +306,16 @@ export default function DashboardPage() {
                 {completedTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center justify-between p-3 border rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors gap-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Checkbox
                         checked={task.completed}
                         onCheckedChange={() => toggleTaskComplete(task.id, task.completed)}
                         aria-label={`Mark ${task.title} as incomplete`}
                       />
-                      <div>
-                        <p className="font-medium line-through text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium line-through text-muted-foreground truncate">
                           {task.title}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -321,24 +323,28 @@ export default function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 sm:ml-3">
                       <Button
                         variant="ghost"
                         size="icon-lg"
-                        className="cursor-pointer"
-                        onClick={() => handleEditTask(task)}
-                        aria-label={`Edit ${task.title}`}
+                        className="cursor-not-allowed opacity-50 shrink-0 relative"
+                        disabled
+                        aria-label="Cannot edit completed task"
+                        title="Cannot edit completed tasks"
                       >
-                        <Pencil className="h-5 w-5" />
+                        <Pencil className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-6 h-0.5 bg-destructive rotate-45 rounded-full" />
+                        </div>
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon-lg"
                         onClick={() => handleDeleteTask(task.id, task.title)}
                         aria-label={`Delete ${task.title}`}
-                        className="text-destructive hover:text-destructive cursor-pointer"
+                        className="text-destructive hover:text-destructive cursor-pointer shrink-0"
                       >
-                        <Trash2 className="h-5 w-5" />
+                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                     </div>
                   </div>

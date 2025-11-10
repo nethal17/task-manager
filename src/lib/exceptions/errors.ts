@@ -1,7 +1,3 @@
-/**
- * Custom Error Classes for Task Manager Application
- */
-
 // Base Application Error
 export class AppError extends Error {
   constructor(
@@ -139,16 +135,10 @@ export class ServiceUnavailableError extends AppError {
   }
 }
 
-/**
- * Type guard to check if error is an AppError
- */
 export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError
 }
 
-/**
- * Type guard to check if error is operational (safe to show to user)
- */
 export function isOperationalError(error: unknown): boolean {
   if (isAppError(error)) {
     return error.isOperational

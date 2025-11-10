@@ -1,4 +1,4 @@
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import {
   AppError,
   AuthenticationError,
@@ -12,9 +12,6 @@ import {
   isOperationalError,
 } from './errors'
 
-/**
- * Error handler configuration
- */
 interface ErrorHandlerConfig {
   showToast?: boolean
   logToConsole?: boolean
@@ -22,25 +19,19 @@ interface ErrorHandlerConfig {
   onError?: (error: Error) => void
 }
 
-/**
- * Default configuration
- */
+
 const defaultConfig: ErrorHandlerConfig = {
   showToast: true,
   logToConsole: true,
   redirectOnAuth: false,
 }
 
-/**
- * Get user-friendly error message
- */
 function getUserMessage(error: Error): string {
-  // If it's our custom error, use its message
+
   if (isAppError(error)) {
     return error.message
   }
 
-  // Handle common error patterns
   const errorMessage = error.message.toLowerCase()
 
   if (errorMessage.includes('fetch')) {
@@ -67,13 +58,10 @@ function getUserMessage(error: Error): string {
     return 'You do not have permission to perform this action.'
   }
 
-  // Generic fallback
   return 'An unexpected error occurred. Please try again.'
 }
 
-/**
- * Log error for debugging
- */
+
 function logError(error: Error, context?: string) {
   const timestamp = new Date().toISOString()
   const prefix = context ? `[${context}]` : '[Error]'
@@ -94,9 +82,6 @@ function logError(error: Error, context?: string) {
   console.groupEnd()
 }
 
-/**
- * Handle Supabase-specific errors
- */
 export function handleSupabaseError(error: any): AppError {
   const message = error?.message || 'Database operation failed'
   const code = error?.code
@@ -132,9 +117,7 @@ export function handleSupabaseError(error: any): AppError {
   return new AppError(message, 500)
 }
 
-/**
- * Handle network errors
- */
+
 export function handleNetworkError(error: any): AppError {
   if (!navigator.onLine) {
     return new OfflineError()
@@ -147,9 +130,6 @@ export function handleNetworkError(error: any): AppError {
   return new NetworkError()
 }
 
-/**
- * Main error handler - Client side
- */
 export function handleError(
   error: unknown,
   context?: string,
@@ -184,7 +164,7 @@ export function handleError(
       } else if (appError.statusCode === 401 || appError.statusCode === 403) {
         toast.error(message)
       } else if (appError.statusCode >= 400) {
-        toast.warning(message)
+        toast.error(message, { icon: '⚠️' })
       } else {
         toast.error(message)
       }
@@ -208,9 +188,6 @@ export function handleError(
   }
 }
 
-/**
- * Async error wrapper - automatically handles errors in async functions
- */
 export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
   fn: T,
   context?: string,
@@ -221,14 +198,11 @@ export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
       return await fn(...args)
     } catch (error) {
       handleError(error, context, config)
-      throw error // Re-throw so caller can handle if needed
+      throw error 
     }
   }) as T
 }
 
-/**
- * Retry wrapper with exponential backoff
- */
 export async function withRetry<T>(
   fn: () => Promise<T>,
   options: {
@@ -278,9 +252,6 @@ export async function withRetry<T>(
   throw lastError!
 }
 
-/**
- * Timeout wrapper
- */
 export async function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number = 30000,
@@ -295,16 +266,10 @@ export async function withTimeout<T>(
   return Promise.race([promise, timeoutPromise])
 }
 
-/**
- * Export utility to check if user is online
- */
 export function isOnline(): boolean {
   return typeof navigator !== 'undefined' ? navigator.onLine : true
 }
 
-/**
- * Safe async executor - returns [error, data] tuple
- */
 export async function safeAsync<T>(
   promise: Promise<T>
 ): Promise<[Error | null, T | null]> {

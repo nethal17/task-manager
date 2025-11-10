@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
+import toast from "react-hot-toast"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -93,11 +93,11 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="p-6 cursor-pointer">
-          <Plus className="h-4 w-4" />
-          Add Task
+          <Plus className="h-4 w-4 font-bold" />
+          Add New Task
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-primary">Add New Task</DialogTitle>
           <DialogDescription>
@@ -157,7 +157,7 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
                     {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="center" side="bottom">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -168,17 +168,17 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
               </Popover>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={isLoading}
-              className="cursor-pointer"
+              className="cursor-pointer w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="cursor-pointer">
+            <Button type="submit" disabled={isLoading} className="cursor-pointer w-full sm:w-auto">
               {isLoading ? "Adding..." : "Add Task"}
             </Button>
           </DialogFooter>

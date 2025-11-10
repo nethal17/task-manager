@@ -17,10 +17,6 @@ interface State {
   errorInfo: React.ErrorInfo | null
 }
 
-/**
- * Error Boundary Component
- * Catches JavaScript errors anywhere in the child component tree
- */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
@@ -36,10 +32,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to console
+
     console.error('Error Boundary caught an error:', error, errorInfo)
 
-    // Update state with error info
     this.setState({
       error,
       errorInfo,
@@ -50,8 +45,6 @@ export class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo)
     }
 
-    // You could send error to logging service here
-    // e.g., Sentry.captureException(error, { contexts: { react: errorInfo } })
   }
 
   handleReset = () => {
@@ -68,12 +61,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
+
       if (this.props.fallback) {
         return this.props.fallback
       }
 
-      // Default error UI
       return (
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md border-destructive/50">
@@ -138,9 +130,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-/**
- * Hook to manually trigger error boundary
- */
 export function useErrorBoundary() {
   const [, setError] = React.useState()
 
