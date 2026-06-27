@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,7 +26,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import type { Task, PriorityType } from "@/lib/types/task"
-import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 interface EditTaskDialogProps {
   task: Task
@@ -42,7 +40,6 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
     task.deadline_date ? new Date(task.deadline_date) : undefined
   )
   const [priority, setPriority] = useState<PriorityType>(task.priority)
-  const supabase = createClient()
 
   const {
     register,
@@ -66,34 +63,27 @@ export function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: Edit
     setIsLoading(true)
 
     try {
-      // Validate
-      if (!data.title || data.title.trim().length === 0) {
-        throw new ValidationError('Task title is required')
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: data.title.trim(),
+          priority,
+          deadline_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
+        }),
+      })
+
+      if (!res.ok) {
+        const result = await res.json()
+        toast.error(result.error || "Failed to update task")
+        return
       }
-
-      if (data.title.length > 255) {
-        throw new ValidationError('Task title is too long (max 255 characters)')
-      }
-
-      const updatedTask = {
-        title: data.title.trim(),
-        priority,
-        deadline_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
-        updated_at: new Date().toISOString(),
-      }
-
-      const { error } = await supabase
-        .from("tasks")
-        .update(updatedTask)
-        .eq("id", task.id)
-
-      if (error) throw handleSupabaseError(error)
 
       toast.success("Task updated successfully!")
       onOpenChange(false)
       onTaskUpdated()
-    } catch (error) {
-      handleError(error, 'Update Task')
+    } catch {
+      toast.error("Failed to update task")
     } finally {
       setIsLoading(false)
     }

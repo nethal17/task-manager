@@ -2,16 +2,14 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import toast from "react-hot-toast"
 import { useForm } from "react-hook-form"
-import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
-type ResetPasswordForm = {
+type ResetPasswordFormData = {
   password: string
   confirmPassword: string
 }
@@ -20,56 +18,53 @@ function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
-  
+  const token = searchParams.get("token")
+
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<ResetPasswordForm>()
+  } = useForm<ResetPasswordFormData>()
 
   const password = watch("password")
 
   useEffect(() => {
-    // Check if we have the code parameter
-    const code = searchParams.get('code')
-    if (!code) {
-      toast.error('Invalid reset link')
-      router.push('/forgot-password')
+    if (!token) {
+      toast.error("Invalid reset link")
+      router.push("/forgot-password")
     }
-  }, [searchParams, router])
+  }, [token, router])
 
-  const onSubmit = async (data: ResetPasswordForm) => {
+  const onSubmit = async (data: ResetPasswordFormData) => {
     try {
       setIsLoading(true)
 
-      // Validate passwords
-      if (!data.password || !data.confirmPassword) {
-        throw new ValidationError("All fields are required")
-      }
-
       if (data.password !== data.confirmPassword) {
-        throw new ValidationError("Passwords do not match")
+        toast.error("Passwords do not match")
+        return
       }
 
-      if (data.password.length < 6) {
-        throw new ValidationError("Password must be at least 6 characters")
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          password: data.password,
+        }),
       })
 
-      if (error) {
-        const appError = handleSupabaseError(error)
-        throw appError
+      const result = await res.json()
+
+      if (!res.ok) {
+        toast.error(result.error || "Failed to reset password")
+        return
       }
 
       toast.success("Password reset successfully!")
       router.push("/login")
-    } catch (error) {
-      handleError(error, "Failed to reset password")
+    } catch {
+      toast.error("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -122,7 +117,7 @@ function ResetPasswordForm() {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
               {isLoading ? "Resetting..." : "Reset Password"}
             </Button>
 
@@ -145,16 +140,18 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
-            <CardDescription>Loading...</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-2xl">Reset Password</CardTitle>
+              <CardDescription>Loading...</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   )

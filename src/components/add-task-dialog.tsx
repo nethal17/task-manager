@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,20 +26,17 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Plus } from "lucide-react"
 import { format } from "date-fns"
-import type { TaskInsert, PriorityType } from "@/lib/types/task"
-import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
+import type { PriorityType } from "@/lib/types/task"
 
 interface AddTaskDialogProps {
-  userId: string
   onTaskAdded: () => void
 }
 
-export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
+export function AddTaskDialog({ onTaskAdded }: AddTaskDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [priority, setPriority] = useState<PriorityType>("Low")
-  const supabase = createClient()
 
   const {
     register,
@@ -53,28 +49,21 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
     setIsLoading(true)
 
     try {
-      // Validate
-      if (!data.title || data.title.trim().length === 0) {
-        throw new ValidationError('Task title is required')
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: data.title.trim(),
+          priority,
+          deadline_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
+        }),
+      })
+
+      if (!res.ok) {
+        const result = await res.json()
+        toast.error(result.error || "Failed to create task")
+        return
       }
-
-      if (data.title.length > 255) {
-        throw new ValidationError('Task title is too long (max 255 characters)')
-      }
-
-      const newTask = {
-        title: data.title.trim(),
-        priority,
-        deadline_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : null,
-        completed: false,
-        user_id: userId,
-      }
-
-      const { error } = await supabase
-        .from("tasks")
-        .insert([newTask])
-
-      if (error) throw handleSupabaseError(error)
 
       toast.success("Task added successfully!")
       setOpen(false)
@@ -82,8 +71,8 @@ export function AddTaskDialog({ userId, onTaskAdded }: AddTaskDialogProps) {
       setSelectedDate(undefined)
       setPriority("Low")
       onTaskAdded()
-    } catch (error) {
-      handleError(error, 'Create Task')
+    } catch {
+      toast.error("Failed to create task")
     } finally {
       setIsLoading(false)
     }

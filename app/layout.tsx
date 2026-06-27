@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Providers } from "@/components/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,10 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-        <Toaster position="top-center" />
+        <Providers>
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+          <Toaster position="top-center" />
+        </Providers>
       </body>
     </html>
   );

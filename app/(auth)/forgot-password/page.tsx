@@ -4,19 +4,16 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import Link from "next/link"
 import toast from "react-hot-toast"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 import type { ForgotPasswordFormData } from "@/lib/types/auth"
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const supabase = createClient()
 
   const {
     register,
@@ -28,24 +25,23 @@ export default function ForgotPasswordPage() {
     try {
       setIsLoading(true)
 
-      // Validate email
-      if (!data.email) {
-        throw new ValidationError("Email is required")
-      }
-
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email }),
       })
 
-      if (error) {
-        const appError = handleSupabaseError(error)
-        throw appError
+      const result = await res.json()
+
+      if (!res.ok) {
+        toast.error(result.error || "Failed to send reset email")
+        return
       }
 
       setIsSubmitted(true)
       toast.success("Password reset email sent! Check your inbox.")
-    } catch (error) {
-      handleError(error, "Failed to send password reset email")
+    } catch {
+      toast.error("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
     }

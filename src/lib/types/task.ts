@@ -6,7 +6,7 @@ export interface Task {
   updated_at: string
   title: string
   completed: boolean
-  user_id: string
+  userId: string
   priority: PriorityType
   deadline_date: string | null
 }

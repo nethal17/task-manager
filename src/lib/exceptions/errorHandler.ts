@@ -6,8 +6,6 @@ import {
   NetworkError,
   OfflineError,
   TimeoutError,
-  ValidationError,
-  RateLimitError,
   isAppError,
   isOperationalError,
 } from './errors'
@@ -19,7 +17,6 @@ interface ErrorHandlerConfig {
   onError?: (error: Error) => void
 }
 
-
 const defaultConfig: ErrorHandlerConfig = {
   showToast: true,
   logToConsole: true,
@@ -27,7 +24,6 @@ const defaultConfig: ErrorHandlerConfig = {
 }
 
 function getUserMessage(error: Error): string {
-
   if (isAppError(error)) {
     return error.message
   }
@@ -61,73 +57,24 @@ function getUserMessage(error: Error): string {
   return 'An unexpected error occurred. Please try again.'
 }
 
-
 function logError(error: Error, context?: string) {
   const timestamp = new Date().toISOString()
   const prefix = context ? `[${context}]` : '[Error]'
-  
+
   console.group(`${prefix} ${timestamp}`)
   console.error('Message:', error.message)
   console.error('Name:', error.name)
-  
+
   if (isAppError(error)) {
     console.error('Status Code:', error.statusCode)
     console.error('Operational:', error.isOperational)
   }
-  
+
   if (error.stack) {
     console.error('Stack:', error.stack)
   }
-  
+
   console.groupEnd()
-}
-
-export function handleSupabaseError(error: any): AppError {
-  const message = error?.message || 'Database operation failed'
-  const code = error?.code
-
-  // Auth errors
-  if (code === 'PGRST301' || message.includes('JWT')) {
-    return new SessionExpiredError()
-  }
-
-  if (code === '23505') {
-    return new AppError('This record already exists', 409)
-  }
-
-  if (code === '23503') {
-    return new AppError('Cannot delete: related records exist', 400)
-  }
-
-  if (code === 'PGRST116') {
-    return new AppError('Record not found', 404)
-  }
-
-  // Row level security
-  if (message.includes('row-level security')) {
-    return new AppError('You do not have permission to perform this action', 403)
-  }
-
-  // Network errors
-  if (message.includes('fetch') || message.includes('network')) {
-    return new NetworkError()
-  }
-
-  // Generic database error
-  return new AppError(message, 500)
-}
-
-
-export function handleNetworkError(error: any): AppError {
-  if (!navigator.onLine) {
-    return new OfflineError()
-  }
-
-  if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
-    return new TimeoutError()
-  }
-
-  return new NetworkError()
 }
 
 export function handleError(
@@ -136,7 +83,7 @@ export function handleError(
   config: ErrorHandlerConfig = {}
 ): void {
   const finalConfig = { ...defaultConfig, ...config }
-  
+
   let appError: Error
 
   // Convert unknown error to Error type
@@ -156,21 +103,7 @@ export function handleError(
   // Show toast notification if enabled
   if (finalConfig.showToast) {
     const message = getUserMessage(appError)
-    
-    if (isAppError(appError)) {
-      // Use appropriate toast type based on status code
-      if (appError.statusCode >= 500) {
-        toast.error(message)
-      } else if (appError.statusCode === 401 || appError.statusCode === 403) {
-        toast.error(message)
-      } else if (appError.statusCode >= 400) {
-        toast.error(message, { icon: '⚠️' })
-      } else {
-        toast.error(message)
-      }
-    } else {
-      toast.error(message)
-    }
+    toast.error(message)
   }
 
   // Call custom error handler if provided
@@ -186,21 +119,6 @@ export function handleError(
       }, 2000)
     }
   }
-}
-
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  context?: string,
-  config?: ErrorHandlerConfig
-): T {
-  return (async (...args: any[]) => {
-    try {
-      return await fn(...args)
-    } catch (error) {
-      handleError(error, context, config)
-      throw error 
-    }
-  }) as T
 }
 
 export async function withRetry<T>(
@@ -250,33 +168,4 @@ export async function withRetry<T>(
   }
 
   throw lastError!
-}
-
-export async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number = 30000,
-  timeoutMessage?: string
-): Promise<T> {
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      reject(new TimeoutError(timeoutMessage))
-    }, timeoutMs)
-  })
-
-  return Promise.race([promise, timeoutPromise])
-}
-
-export function isOnline(): boolean {
-  return typeof navigator !== 'undefined' ? navigator.onLine : true
-}
-
-export async function safeAsync<T>(
-  promise: Promise<T>
-): Promise<[Error | null, T | null]> {
-  try {
-    const data = await promise
-    return [null, data]
-  } catch (error) {
-    return [error instanceof Error ? error : new Error(String(error)), null]
-  }
 }
