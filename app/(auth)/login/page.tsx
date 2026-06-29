@@ -5,19 +5,20 @@ import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import toast from "react-hot-toast"
-import { createClient } from "@/lib/supabase/client"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
-import type { LoginFormData } from "@/lib/types/auth" 
+import type { LoginFormData } from "@/lib/types/auth"
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
+  const [showResendVerification, setShowResendVerification] = useState(false)
+  const [resendEmail, setResendEmail] = useState("")
+  const [isResending, setIsResending] = useState(false)
 
   const {
     register,
@@ -25,30 +26,75 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>()
 
+  const handleResendVerification = async () => {
+    if (!resendEmail) return
+
+    try {
+      setIsResending(true)
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resendEmail }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to resend verification email")
+        return
+      }
+
+      toast.success("Verification email sent! Check your inbox.")
+      setShowResendVerification(false)
+    } catch {
+      toast.error("Something went wrong. Please try again.")
+    } finally {
+      setIsResending(false)
+    }
+  }
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
+      setShowResendVerification(false)
 
-      // Validate form data
-      if (!data.email || !data.password) {
-        throw new ValidationError("Email and password are required")
-      }
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      // Validate credentials first to get user-friendly error messages
+      const validateRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, password: data.password }),
       })
 
-      if (error) {
-        const appError = handleSupabaseError(error)
-        throw appError
+      if (!validateRes.ok) {
+        const validateData = await validateRes.json()
+
+        // Show resend verification button if email is not verified
+        if (validateData.code === "EMAIL_NOT_VERIFIED") {
+          setShowResendVerification(true)
+          setResendEmail(data.email)
+        }
+
+        toast.error(validateData.error || "Invalid email or password")
+        return
+      }
+
+      // Credentials are valid, proceed with NextAuth sign-in
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        toast.error("Invalid email or password")
+        return
       }
 
       toast.success("Logged in successfully!")
       router.push("/dashboard")
       router.refresh()
-    } catch (error) {
-      handleError(error, "Failed to sign in")
+    } catch {
+      toast.error("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -120,6 +166,23 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
+            {showResendVerification && (
+              <div className="w-full rounded-lg border border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20 p-4 space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Your email is not verified. Didn&apos;t receive the verification email?
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full cursor-pointer"
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                >
+                  {isResending ? "Sending..." : "Resend verification email"}
+                </Button>
+              </div>
+            )}
             <Button type="submit" className="w-full mt-6 cursor-pointer" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>

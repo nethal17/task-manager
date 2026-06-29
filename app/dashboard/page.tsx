@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,99 +18,69 @@ import {
 } from "@/components/ui/alert-dialog"
 import { AddTaskDialog } from "@/components/add-task-dialog"
 import { EditTaskDialog } from "@/components/edit-task-dialog"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, LogOutIcon } from "lucide-react"
 import toast from "react-hot-toast"
-import type { User } from "@supabase/supabase-js"
 import type { Task } from "@/lib/types/task"
-import { LogOutIcon } from "lucide-react"
-import { handleError, handleSupabaseError, withRetry } from "@/lib/exceptions"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+  const { data: session, status } = useSession()
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const supabase = createClient()
 
   const fetchTasks = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const tasks = await withRetry(async () => {
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-
-        if (error) throw handleSupabaseError(error)
-        return data || []
-      })
-
-      setTasks(tasks)
+      const res = await fetch("/api/tasks")
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push("/login")
+          return
+        }
+        throw new Error("Failed to fetch tasks")
+      }
+      const data = await res.json()
+      setTasks(data)
     } catch (error) {
-      handleError(error, 'Fetch Tasks')
+      console.error("Fetch tasks error:", error)
+      toast.error("Failed to load tasks")
     }
   }
 
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        
-        if (error) throw handleSupabaseError(error)
-        
-        if (!user) {
-          router.push("/login")
-          return
-        }
-        
-        setUser(user)
-        setIsLoading(false)
-        fetchTasks()
-      } catch (error) {
-        handleError(error, 'Get User', {
-          redirectOnAuth: true
-        })
-        setIsLoading(false)
-      }
+    if (status === "loading") return
+    if (status === "unauthenticated") {
+      router.push("/login")
+      return
     }
-
-    getUser()
-  }, [router, supabase.auth])
+    setIsLoading(false)
+    fetchTasks()
+  }, [status, router])
 
   const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) throw handleSupabaseError(error)
-      
-      toast.success("Signed out successfully")
-      router.push("/")
-      router.refresh()
-    } catch (error) {
-      handleError(error, 'Sign Out')
-    }
+    await signOut({ redirect: false })
+    toast.success("Signed out successfully")
+    router.push("/")
+    router.refresh()
   }
 
   const toggleTaskComplete = async (taskId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from("tasks")
-        .update({ completed: !currentStatus, updated_at: new Date().toISOString() })
-        .eq("id", taskId)
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !currentStatus }),
+      })
 
-      if (error) throw handleSupabaseError(error)
+      if (!res.ok) throw new Error("Failed to update task")
 
       toast.success(currentStatus ? "Task marked as incomplete" : "Task completed!")
       fetchTasks()
-    } catch (error) {
-      handleError(error, 'Toggle Task Complete')
+    } catch {
+      toast.error("Failed to update task")
     }
   }
 
@@ -128,23 +98,22 @@ export default function DashboardPage() {
     if (!deletingTask) return
 
     try {
-      const { error } = await supabase
-        .from("tasks")
-        .delete()
-        .eq("id", deletingTask.id)
+      const res = await fetch(`/api/tasks/${deletingTask.id}`, {
+        method: "DELETE",
+      })
 
-      if (error) throw handleSupabaseError(error)
+      if (!res.ok) throw new Error("Failed to delete task")
 
       toast.success("Task deleted successfully")
       setIsDeleteDialogOpen(false)
       setDeletingTask(null)
       fetchTasks()
-    } catch (error) {
-      handleError(error, 'Delete Task')
+    } catch {
+      toast.error("Failed to delete task")
     }
   }
 
-  if (isLoading) {
+  if (isLoading || status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -161,7 +130,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">My Tasks</h1>
-            <p className="text-sm sm:text-base text-muted-foreground truncate">Welcome back, {user?.user_metadata?.full_name || user?.email}</p>
+            <p className="text-sm sm:text-base text-muted-foreground truncate">Welcome back, {session?.user?.name || session?.user?.email}</p>
           </div>
           <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <Button variant="destructive" onClick={handleSignOut} className="p-6 sm:p-6 cursor-pointer whitespace-nowrap">
@@ -225,7 +194,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                {user && <AddTaskDialog userId={user.id} onTaskAdded={fetchTasks} />}
+                <AddTaskDialog onTaskAdded={fetchTasks} />
               </div>
             </div>
           </CardHeader>
@@ -240,10 +209,10 @@ export default function DashboardPage() {
                   <div
                     key={task.id}
                     className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg transition-colors gap-3 ${
-                      task.priority === "High" 
-                        ? "bg-red-50 border-red-300 hover:bg-red-100/70 dark:bg-red-950/20 dark:border-red-900/50 dark:hover:bg-red-950/30" 
-                        : task.priority === "Medium" 
-                        ? "bg-yellow-50 border-yellow-300 hover:bg-yellow-100/70 dark:bg-yellow-950/20 dark:border-yellow-900/50 dark:hover:bg-yellow-950/30" 
+                      task.priority === "High"
+                        ? "bg-red-50 border-red-300 hover:bg-red-100/70 dark:bg-red-950/20 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                        : task.priority === "Medium"
+                        ? "bg-yellow-50 border-yellow-300 hover:bg-yellow-100/70 dark:bg-yellow-950/20 dark:border-yellow-900/50 dark:hover:bg-yellow-950/30"
                         : "bg-blue-50 border-blue-300 hover:bg-blue-100/70 dark:bg-blue-950/20 dark:border-blue-900/50 dark:hover:bg-blue-950/30"
                     }`}
                   >
@@ -294,7 +263,7 @@ export default function DashboardPage() {
             <div>
               <CardTitle className="text-xl sm:text-2xl">Completed Tasks</CardTitle>
               <CardDescription>Tasks you&apos;ve finished</CardDescription>
-            </div>  
+            </div>
           </CardHeader>
           <CardContent>
             {completedTasks.length === 0 ? (

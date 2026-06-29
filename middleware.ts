@@ -1,12 +1,15 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import NextAuth from "next-auth"
+import { authConfig } from "@/lib/auth.config"
+import type { NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+const { auth } = NextAuth(authConfig)
+
+export default async function middleware(request: NextRequest) {
+  return (auth as any)(request)
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

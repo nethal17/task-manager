@@ -5,19 +5,16 @@ import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import toast from "react-hot-toast"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { handleError, handleSupabaseError, ValidationError } from "@/lib/exceptions"
 
 import type { SignupFormData } from "@/lib/types/auth"
 
 export default function SignupPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   const {
     register,
@@ -32,29 +29,31 @@ export default function SignupPage() {
     try {
       setIsLoading(true)
 
-      // Validate form data
-      if (!data.email || !data.password || !data.confirmPassword) {
-        throw new ValidationError("All fields are required")
-      }
-
       if (data.password !== data.confirmPassword) {
-        throw new ValidationError("Passwords do not match")
+        toast.error("Passwords do not match")
+        return
       }
 
-      const { error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
       })
 
-      if (error) {
-        const appError = handleSupabaseError(error)
-        throw appError
+      const result = await res.json()
+
+      if (!res.ok) {
+        toast.error(result.error || "Failed to create account")
+        return
       }
 
-      toast.success("Account created! Please check your email to verify your account.")
+      toast.success(result.message)
       router.push("/login")
-    } catch (error) {
-      handleError(error, "Failed to create account")
+    } catch {
+      toast.error("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -71,7 +70,6 @@ export default function SignupPage() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
