@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 
 const { auth } = NextAuth(authConfig)
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   return (auth as any)(request)
 }
 
